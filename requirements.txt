@@ -1,0 +1,9 @@
+# Flipodoro has ZERO third-party dependencies!
+# Uses only Python 3.10+ standard library (Tkinter is included).
+#
+# To run from source:
+#   python src/main.py
+#
+# To build EXE:
+#   pip install pyinstaller
+#   python build.py
