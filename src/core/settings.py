@@ -35,10 +35,6 @@ class Settings:
         self._sound_enabled: bool = True
         self.load()
 
-    # -----------------------------------------------------------------------
-    # Properties
-    # -----------------------------------------------------------------------
-
     @property
     def study_minutes(self) -> int:
         return self._study_minutes
@@ -82,10 +78,6 @@ class Settings:
     def sound_enabled(self, value: bool) -> None:
         self._sound_enabled = bool(value)
 
-    # -----------------------------------------------------------------------
-    # Persistence
-    # -----------------------------------------------------------------------
-
     def load(self) -> None:
         path = self._settings_path()
         if not os.path.exists(path):
@@ -113,10 +105,6 @@ class Settings:
         self._long_break_minutes = DEFAULT_LONG_BREAK_MINUTES
         self._sessions_before_long_break = DEFAULT_SESSIONS_BEFORE_LONG_BREAK
         self._sound_enabled = True
-
-    # -----------------------------------------------------------------------
-    # Private
-    # -----------------------------------------------------------------------
 
     def _apply(self, data: dict[str, Any]) -> None:
         if "study_minutes" in data:

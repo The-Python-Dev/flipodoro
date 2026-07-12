@@ -25,12 +25,9 @@ logger = logging.getLogger(__name__)
 def get_icon_path():
     """Get absolute path to icon.ico, handling both source and EXE."""
     if getattr(sys, "frozen", False):
-        # PyInstaller EXE - assets bundled in _MEIPASS
         base = sys._MEIPASS
         return os.path.join(base, "assets", "icon.ico")
     else:
-        # Running from source
-        # __file__ is src/ui/app.py → go up 2 levels to project root, then src/assets
         this_file = os.path.abspath(__file__)
         ui_dir = os.path.dirname(this_file)
         src_dir = os.path.dirname(ui_dir)
@@ -65,7 +62,6 @@ class App:
         root.minsize(WINDOW_MIN_WIDTH, WINDOW_MIN_HEIGHT)
         root.resizable(True, True)
 
-        # Load icon with absolute path
         icon_path = get_icon_path()
         if os.path.exists(icon_path):
             try:
@@ -73,7 +69,6 @@ class App:
                 logger.info("Icon loaded from: %s", icon_path)
             except Exception as e:
                 logger.warning("Failed to set iconbitmap: %s", e)
-                # Fallback: try iconphoto method
                 try:
                     icon_img = tk.PhotoImage(file=icon_path)
                     root.iconphoto(True, icon_img)
