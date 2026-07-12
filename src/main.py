@@ -6,10 +6,10 @@ Configures logging and launches the application.
 
 import logging
 import sys
+import os
 
 
 def configure_logging() -> None:
-    import os
     is_frozen = getattr(sys, "frozen", False)
 
     if is_frozen:
@@ -30,9 +30,26 @@ def configure_logging() -> None:
         )
 
 
+def set_windows_app_id() -> None:
+    """
+    Tell Windows this is a distinct app (not just Python).
+    This makes the taskbar show OUR icon instead of Python's icon.
+    """
+    try:
+        from ctypes import windll
+        app_id = "OmDautkhani.Flipodoro.FlipClockTimer.1.1.0"
+        windll.shell32.SetCurrentProcessExplicitAppUserModelID(app_id)
+    except (ImportError, AttributeError, OSError):
+        pass
+
+
 def main() -> None:
     configure_logging()
     logger = logging.getLogger(__name__)
+
+    # Set Windows app ID BEFORE creating the app
+    set_windows_app_id()
+
     try:
         from src.ui.app import App
         app = App()

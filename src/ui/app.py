@@ -2,6 +2,7 @@ import tkinter as tk
 import logging
 import sys
 import os
+
 from src.core.timer import PomodoroTimer
 from src.core.settings import Settings
 from src.core.constants import (
@@ -12,11 +13,28 @@ from src.core.constants import (
     WINDOW_MIN_WIDTH,
     WINDOW_MIN_HEIGHT,
 )
+
 from src.ui.theme import PALETTE
 from src.ui.timer_view import TimerView
 from src.ui.settings_view import SettingsView
 
+
 logger = logging.getLogger(__name__)
+
+
+def get_icon_path():
+    """Get absolute path to icon.ico, handling both source and EXE."""
+    if getattr(sys, "frozen", False):
+        # PyInstaller EXE - assets bundled in _MEIPASS
+        base = sys._MEIPASS
+        return os.path.join(base, "assets", "icon.ico")
+    else:
+        # Running from source
+        # __file__ is src/ui/app.py → go up 2 levels to project root, then src/assets
+        this_file = os.path.abspath(__file__)
+        ui_dir = os.path.dirname(this_file)
+        src_dir = os.path.dirname(ui_dir)
+        return os.path.join(src_dir, "assets", "icon.ico")
 
 
 class App:
@@ -47,16 +65,23 @@ class App:
         root.minsize(WINDOW_MIN_WIDTH, WINDOW_MIN_HEIGHT)
         root.resizable(True, True)
 
-        try:
-            if getattr(sys, "frozen", False):
-                base = sys._MEIPASS
-            else:
-                base = os.path.join(os.path.dirname(__file__), "..", "assets")
-            icon_path = os.path.join(base, "icon.ico")
-            if os.path.exists(icon_path):
-                root.iconbitmap(icon_path)
-        except Exception:
-            pass
+        # Load icon with absolute path
+        icon_path = get_icon_path()
+        if os.path.exists(icon_path):
+            try:
+                root.iconbitmap(default=icon_path)
+                logger.info("Icon loaded from: %s", icon_path)
+            except Exception as e:
+                logger.warning("Failed to set iconbitmap: %s", e)
+                # Fallback: try iconphoto method
+                try:
+                    icon_img = tk.PhotoImage(file=icon_path)
+                    root.iconphoto(True, icon_img)
+                    logger.info("Icon set via iconphoto fallback")
+                except Exception as e2:
+                    logger.error("Both icon methods failed: %s", e2)
+        else:
+            logger.warning("Icon file not found at: %s", icon_path)
 
         return root
 
