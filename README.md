@@ -21,12 +21,24 @@ No installation required. No Python needed. Double click and go.
 
 - Flip clock display with satisfying flip animation on every tick
 - Three session types: Focus, Short Break, and Long Break
-- Fully customisable session durations
-- Dark theme easy on the eyes for long sessions
+- Fully customisable session durations (1-99 minutes)
+- Session dots indicator showing progress through your Pomodoro cycle
+- Session-based accent colors (red / teal / purple)
 - Focus mode: fullscreen, distraction-free (ESC to exit)
+- Dark theme easy on the eyes for long sessions
 - Keyboard shortcuts for quick control
+- Settings persist between sessions
+- Zero third-party dependencies — pure Python standard library
 - Offline-first: no accounts, no cloud, just a timer
 - Standalone .exe: send to friends, they double click, it works
+
+---
+
+## How It Works
+
+Pick a session type, hit Space, and get to work. When the timer completes, Flipodoro moves you to the next session automatically. Focus, break, focus, break — the Pomodoro rhythm, without the noise.
+
+Press **F** to enter Focus Mode for fullscreen distraction-free work. Press **ESC** to exit.
 
 ---
 
@@ -36,7 +48,7 @@ No installation required. No Python needed. Double click and go.
 |-----|--------|
 | Space | Start / Pause |
 | R | Reset |
-| S | Skip |
+| S | Skip session |
 | F | Toggle focus mode |
 | Esc | Exit focus mode |
 | Ctrl + , | Open settings |
@@ -45,13 +57,11 @@ No installation required. No Python needed. Double click and go.
 
 ## Run From Source
 
-Requires Python 3.10 or later.
+Requires Python 3.10 or later. No dependencies to install — Tkinter ships with Python.
 
     git clone https://github.com/The-Python-Dev/flipodoro.git
     cd flipodoro
     python run.py
-
-No third-party dependencies. Standard library only.
 
 ---
 
@@ -67,13 +77,13 @@ Output: `dist/Flipodoro.exe`
 ## Project Structure
 
     flipodoro/
-    ├── run.py
+    ├── run.py                    # Entry point
     ├── src/
-    │   ├── core/
+    │   ├── core/                 # Business logic (no UI)
     │   │   ├── timer.py
     │   │   ├── settings.py
     │   │   └── constants.py
-    │   ├── ui/
+    │   ├── ui/                   # All visual components
     │   │   ├── app.py
     │   │   ├── timer_view.py
     │   │   ├── settings_view.py
@@ -81,29 +91,47 @@ Output: `dist/Flipodoro.exe`
     │   │   └── theme.py
     │   └── assets/
     │       └── icon.ico
+    ├── requirements.txt
+    ├── CHANGELOG.md
+    ├── README.md
+    ├── LICENSE
     └── .gitignore
+
+See [CHANGELOG.md](CHANGELOG.md) for release history.
 
 ---
 
-## Known Issues (V1.0.0)
+## Architecture Highlights
 
-- Custom icon does not appear in taskbar/title bar while app is running
+- **100% separation of business logic from UI** — `core/` contains zero Tkinter imports
+- **Wall-clock accurate timing** — drift-free even on long sessions
+- **Custom flip clock widget** — built from Tkinter Canvas primitives, no image assets
+- **Defensive settings loading** — corrupt settings file? falls back to defaults, never crashes
+- **All constants centralized** — no magic numbers, no hardcoded colors outside `theme.py`
+
+---
+
+## Known Issues (v1.0.0)
+
+- Custom icon does not appear in taskbar/title bar while app is running (Windows caching quirk)
 - Maximum practical duration is 99 minutes (display limit)
 - Flip clock does not scale with window resize
 
-All fixes planned for V1.1.
+All fixes planned for v1.1.
 
 ---
 
 ## Roadmap
 
-**V1.1**
-- Fix taskbar/title bar icon
+**v1.1**
+- Fix custom icon in taskbar/title bar
 - Support durations above 99 minutes
-- Responsive flip clock scaling
 - Custom completion sound
+- Multiple theme options (light mode + more)
+- Tick sound on flip animation
 
-**V1.2**
+**v1.2**
+- Responsive flip clock scaling
 - System tray support
 - Always-on-top toggle
 
