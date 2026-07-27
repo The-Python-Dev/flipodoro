@@ -7,6 +7,8 @@ A minimal, beautiful flip clock Pomodoro timer for Windows.
 ![Python](https://img.shields.io/badge/python-3.10%2B-yellow)
 ![License](https://img.shields.io/badge/license-MIT-green)
 
+![Flipodoro Demo](https://github.com/user-attachments/assets/d74c28eb-d1d3-4241-9592-7d7ec582c7bc)
+
 ![Flipodoro](https://github.com/user-attachments/assets/b3a07134-11c0-4322-a1e3-96a271be03de)
 
 ---
