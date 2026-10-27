@@ -6,33 +6,36 @@ Main timer screen. Full-window layout.
 
 import tkinter as tk
 from typing import Callable
-from src.core.timer import PomodoroTimer, TimerState
-from src.core.settings import Settings
-from src.core.constants import (
+from flipodoro.core.timer import PomodoroTimer, TimerState
+from flipodoro.core.settings import Settings
+from flipodoro.core.constants import (
     TICK_INTERVAL_MS,
     SESSION_STUDY,
     SESSION_SHORT_BREAK,
     SESSION_LONG_BREAK,
     FOCUS_MODE_EXIT_KEY,
 )
-from src.ui.theme import (
+from flipodoro.ui.theme import (
     PALETTE,
     TYPOGRAPHY,
     SPACING,
     session_accent_color,
     session_label_text,
 )
-from src.ui.flip_clock import FlipClock
+from flipodoro.ui.flip_clock import FlipClock
 
 
 class TimerView(tk.Frame):
 
-    def __init__(self, parent, timer, settings, on_open_settings):
+    def __init__(self, parent, timer, settings, on_open_settings,
+                 on_toggle_always_on_top=None, on_toggle_minibar=None):
         super().__init__(parent, bg=PALETTE.bg_primary)
 
         self._timer = timer
         self._settings = settings
         self._on_open_settings = on_open_settings
+        self._on_toggle_always_on_top = on_toggle_always_on_top
+        self._on_toggle_minibar = on_toggle_minibar
         self._focus_mode = False
         self._tick_job = None
 
@@ -64,6 +67,7 @@ class TimerView(tk.Frame):
         clock_container.pack(expand=True)
 
         self._flip_clock = FlipClock(clock_container)
+        self._flip_clock.set_minimal(self._settings.minimal_animation)
         self._flip_clock.pack()
 
         self._dots_frame = tk.Frame(middle, bg=PALETTE.bg_primary)
@@ -123,6 +127,38 @@ class TimerView(tk.Frame):
             command=self._on_open_settings,
         )
         self._settings_btn.pack(side=tk.RIGHT)
+
+        pin_text = "📌" if self._settings.always_on_top else "📌"
+        self._pin_btn = tk.Button(
+            top,
+            text=pin_text,
+            font=(TYPOGRAPHY.family_body, 14),
+            bd=0,
+            relief=tk.FLAT,
+            fg=PALETTE.accent_study if self._settings.always_on_top else PALETTE.text_muted,
+            bg=PALETTE.bg_primary,
+            activeforeground=PALETTE.text_primary,
+            activebackground=PALETTE.bg_primary,
+            cursor="hand2",
+            command=self._on_toggle_pin,
+        )
+        self._pin_btn.pack(side=tk.RIGHT, padx=(0, 4))
+
+        self._minibar_btn = tk.Button(
+            top,
+            text="▔",
+            font=(TYPOGRAPHY.family_body, 14),
+            bd=0,
+            relief=tk.FLAT,
+            fg=PALETTE.text_muted,
+            bg=PALETTE.bg_primary,
+            activeforeground=PALETTE.text_primary,
+            activebackground=PALETTE.bg_primary,
+            cursor="hand2",
+            command=self._on_toggle_minibar_click,
+        )
+        if self._settings.always_on_top:
+            self._minibar_btn.pack(side=tk.RIGHT, padx=(0, 4))
 
     def _rebuild_dots(self):
         for widget in self._dot_labels:
@@ -229,6 +265,9 @@ class TimerView(tk.Frame):
     def _on_session_complete(self, session_type):
         if self._settings.sound_enabled:
             self._play_completion_sound()
+        self._flash_screen()
+        if self._settings.autostart:
+            self.after(1500, self._timer.start)
 
     def _on_start_pause(self):
         if self._timer.state == TimerState.RUNNING:
@@ -334,12 +373,67 @@ class TimerView(tk.Frame):
             self._tick_job = None
 
     def _play_completion_sound(self):
-        try:
-            import winsound
-            winsound.Beep(880, 150)
-            winsound.Beep(1047, 200)
-        except (ImportError, RuntimeError):
-            pass
+        import threading
+
+        def _beep_sequence():
+            try:
+                import winsound
+                melody = [
+                    (880, 180), (1047, 180), (1319, 250),
+                    (0, 120),
+                    (880, 180), (1047, 180), (1319, 250),
+                    (0, 120),
+                    (1319, 150), (1480, 150), (1760, 400),
+                ]
+                for freq, ms in melody:
+                    if freq == 0:
+                        import time
+                        time.sleep(ms / 1000)
+                    else:
+                        winsound.Beep(freq, ms)
+            except (ImportError, RuntimeError):
+                pass
+
+        threading.Thread(target=_beep_sequence, daemon=True).start()
+
+    def _flash_screen(self):
+        color = session_accent_color(self._timer.current_session_type)
+        steps = [color, PALETTE.bg_primary] * 3
+        self._run_flash(steps, 0)
+
+    def _run_flash(self, steps, index):
+        if index >= len(steps):
+            self.configure(bg=PALETTE.bg_primary)
+            for w in self.winfo_children():
+                try:
+                    w.configure(bg=PALETTE.bg_primary)
+                except tk.TclError:
+                    pass
+            return
+        bg = steps[index]
+        self.configure(bg=bg)
+        for w in self.winfo_children():
+            try:
+                w.configure(bg=bg)
+            except tk.TclError:
+                pass
+        self.after(200, lambda: self._run_flash(steps, index + 1))
+
+    def _on_toggle_pin(self):
+        if self._on_toggle_always_on_top:
+            self._on_toggle_always_on_top()
+
+    def update_pin_button(self, is_on_top: bool):
+        color = PALETTE.accent_study if is_on_top else PALETTE.text_muted
+        self._pin_btn.configure(fg=color)
+        if is_on_top:
+            self._minibar_btn.pack(side=tk.RIGHT, padx=(0, 4))
+        else:
+            self._minibar_btn.pack_forget()
+
+    def _on_toggle_minibar_click(self):
+        if self._on_toggle_minibar:
+            self._on_toggle_minibar()
 
     def on_settings_applied(self):
         self._timer.update_durations(
@@ -348,4 +442,5 @@ class TimerView(tk.Frame):
             long_break_minutes=self._settings.long_break_minutes,
             sessions_before_long_break=self._settings.sessions_before_long_break,
         )
+        self._flip_clock.set_minimal(self._settings.minimal_animation)
         self._refresh_display()
